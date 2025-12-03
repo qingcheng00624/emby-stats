@@ -141,6 +141,22 @@ docker run -d \
 2. 插件已产生播放记录（需要有实际的播放行为）
 3. 数据目录挂载正确，容器能访问到 `playback_reporting.db`
 
+### Q: 挂载目录怎么配置？
+
+**A:** ⚠️ **这是最常见的错误！** 你需要挂载的是 **Emby 的数据目录**，不是给 emby-stats 创建一个新目录！
+
+```yaml
+# ❌ 错误示范 - 不要这样做！
+volumes:
+  - ./emby-stats-data:/emby-data  # 这是空目录，没有任何数据
+
+# ✅ 正确做法 - 挂载 Emby 已有的数据目录
+volumes:
+  - /vol1/1000/docker/emby/config:/emby-data:ro  # 你的 Emby 配置目录
+```
+
+找到你 Emby 容器的数据目录挂载位置，那个目录下应该有 `data/playback_reporting.db` 文件。
+
 ### Q: 无法登录？
 
 **A:** 本面板仅允许 Emby **管理员账号**登录，普通用户无权访问。请确认你使用的账号在 Emby 中具有管理员权限。
