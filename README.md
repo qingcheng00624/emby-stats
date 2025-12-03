@@ -67,8 +67,8 @@ services:
     ports:
       - "8899:8000"
     volumes:
-      # 将 Emby 数据目录挂载进来（只读）
-      - /path/to/emby/data:/emby-data:ro
+      # 挂载包含 playback_reporting.db 的 data 目录（只读）
+      - /path/to/emby/data:/data:ro
     environment:
       # Emby 服务器地址（必填）
       - EMBY_URL=http://your-emby-server:8096
@@ -93,7 +93,7 @@ docker compose up -d
 docker run -d \
   --name emby-stats \
   -p 8899:8000 \
-  -v /path/to/emby/data:/emby-data:ro \
+  -v /path/to/emby/data:/data:ro \
   -e EMBY_URL=http://your-emby-server:8096 \
   -e TZ=Asia/Shanghai \
   qc0624/emby-stats:latest
@@ -114,14 +114,11 @@ docker run -d \
 
 ### 数据目录结构
 
-需要将 Emby 的数据目录挂载到容器的 `/emby-data`：
+需要将 Emby 的 `data` 目录（包含 `playback_reporting.db`）挂载到容器的 `/data`：
 
 ```
-/emby-data
-├── data/
-│   └── playback_reporting.db    # 播放记录数据库（必需）
-└── config/
-    └── authentication.db        # 用于自动获取 API Key（可选）
+/data                           # 容器内路径
+└── playback_reporting.db       # 播放记录数据库（必需）
 ```
 
 > **注意**: Emby 数据目录通常位于：
@@ -154,53 +151,36 @@ docker run -d \
 
 > [!CAUTION]
 > ## 这是最常见的错误！
-> 你需要挂载的是 **Emby 已有的数据目录**，不是给 emby-stats 新建一个空目录！
+> 你需要挂载的是 **Emby 的 data 目录**（包含 `playback_reporting.db` 的那个），不是新建空目录！
 
 ```yaml
 # ❌ 错误！不要新建目录！
 volumes:
-  - ./emby-stats-data:/emby-data  # 这是空目录，没有任何数据
+  - ./emby-stats-data:/data  # 这是空目录，没有任何数据
 
-# ✅ 正确：挂载 Emby 的数据目录
+# ✅ 正确：挂载 Emby 的 data 目录
 volumes:
-  - /你的emby数据目录:/emby-data:ro
+  - /你的emby的data目录:/data:ro
 ```
 
-**如何找到正确的目录？** 关键是找到包含 `data/playback_reporting.db` 的那个目录：
+**如何找到正确的目录？**
 
 ```bash
-# 先找到你的 playback_reporting.db 在哪
+# 找到 playback_reporting.db 所在目录
 find / -name "playback_reporting.db" 2>/dev/null
 ```
 
-找到后，挂载它的 **上两级目录**。例如：
+找到后，挂载它的 **上一级目录**（也就是包含这个 db 文件的 data 目录）：
 
 | 找到的路径 | 应该挂载 |
 |-----------|---------|
-| `/vol1/emby/data/playback_reporting.db` | `/vol1/emby:/emby-data:ro` |
-| `/opt/emby/config/data/playback_reporting.db` | `/opt/emby/config:/emby-data:ro` |
-| `/emby/data/playback_reporting.db` | `/emby:/emby-data:ro` |
+| `/vol1/emby/data/playback_reporting.db` | `/vol1/emby/data:/data:ro` |
+| `/opt/emby/config/data/playback_reporting.db` | `/opt/emby/config/data:/data:ro` |
+| `/emby/data/playback_reporting.db` | `/emby/data:/data:ro` |
 
-**常见的 Emby 目录结构有两种：**
-
-```
-# 结构 A：根目录下直接是 data/config/cache
-/emby/                    <- 挂载这个
-├── data/
-│   └── playback_reporting.db
-├── config/
-└── cache/
-
-# 结构 B：config 下面才有 data
-/emby/config/             <- 挂载这个
-├── data/
-│   └── playback_reporting.db
-└── ...
-```
-
-**验证方法：** 进入你要挂载的目录，确认 `data/playback_reporting.db` 存在：
+**验证方法：** 确认目录里有 `playback_reporting.db`：
 ```bash
-ls -la /你的目录/data/playback_reporting.db
+ls -la /你的目录/playback_reporting.db
 ```
 
 ### Q: 无法登录？
