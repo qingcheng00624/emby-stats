@@ -93,6 +93,7 @@ emby-stats/
 │   │   │   ├── Users.tsx             # 用户统计
 │   │   │   ├── Devices.tsx           # 设备统计
 │   │   │   ├── History.tsx           # 播放历史
+│   │   │   ├── Favorites.tsx         # 收藏统计（双视图）
 │   │   │   ├── Report.tsx            # 报告配置
 │   │   │   ├── Login.tsx             # 登录页
 │   │   │   └── ContentDetail.tsx     # 内容详情
@@ -330,6 +331,7 @@ PlaybackMethod  -- 播放方式（DirectPlay/Transcode 等）
 | `GET /api/now-playing` | 正在播放 |
 | `GET /api/filter-options` | 筛选选项 |
 | `GET /api/content-detail` | 内容详情 |
+| `GET /api/favorites` | 收藏统计（按媒体和按用户分组） |
 
 #### auth.py - 认证
 
@@ -543,6 +545,7 @@ Bot 提供用户交互功能，支持账户绑定和个人报告查询。
 - `UsersData`, `ClientsData`, `DevicesData`
 - `RecentData`, `NowPlayingData`
 - `ContentDetailData`, `FilterOptionsData`
+- `FavoritesData`, `FavoriteItem`, `UserFavorites`, `UserFavoriteItem`
 
 ### 4. 页面组件 (pages/)
 
@@ -553,6 +556,7 @@ Bot 提供用户交互功能，支持账户绑定和个人报告查询。
 | `Users` | 用户：用户播放统计 |
 | `Devices` | 设备：客户端/设备/播放方式统计 |
 | `History` | 历史：最近播放记录 |
+| `Favorites` | 收藏：双视图（按用户/热门榜单）、搜索、类型筛选 |
 | `Report` | 报告：Telegram 推送配置 |
 | `ContentDetail` | 详情：单个内容的播放记录 |
 
