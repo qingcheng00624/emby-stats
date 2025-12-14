@@ -1,5 +1,100 @@
 # Changelog
 
+## v2.26 (2025-12-14) - 🎉 前端重构版本
+
+### 🚀 重大更新
+
+**前端技术栈全面重构** - 从 React 迁移到 Vue 3
+
+#### 技术栈变化
+- **框架**：React 19 → Vue 3.5 (Composition API)
+- **UI 库**：Tailwind CSS → Vuetify 3.7 (Material Design)
+- **状态管理**：React Context → Pinia 2.2
+- **图表库**：Recharts → ECharts 5.5
+- **路由**：React Router → Vue Router 4.5
+- **构建工具**：Vite 6.0 (保持不变)
+
+#### 为什么重构？
+1. **更好的性能** - Vue 3 的响应式系统更高效，渲染速度更快
+2. **更现代的 UI** - Vuetify 3 提供完整的 Material Design 组件
+3. **更好的开发体验** - Composition API 代码更简洁，类型支持更好
+4. **更小的包体积** - 优化后的构建产物更小
+5. **更易维护** - Pinia 状态管理更直观，代码结构更清晰
+
+#### UI/UX 改进
+- **全新的 Material Design 界面** - 采用 Vuetify 组件库，视觉效果更统一
+- **改进的导航体验** - 侧边栏导航更清晰，支持响应式布局
+- **更流畅的动画** - Vue 的 transition 系统提供更自然的过渡效果
+- **优化的图表交互** - ECharts 提供更丰富的交互选项和更好的性能
+- **改进的移动端体验** - 更好的触摸交互和响应式设计
+
+### ✨ 新功能
+
+**报告推送测试功能** - 在报告配置页面添加测试按钮
+- 位置：「报告配置」标签页，「手动发送报告」按钮旁边
+- 功能：发送测试消息到配置的 Telegram，验证 Bot Token 和 Chat ID 是否正确
+- 测试消息："✅ 测试消息 - Emby Stats 报告推送配置成功！可以正常发送消息。"
+- 按钮在 Telegram 未启用或未配置时自动禁用
+- 支持详细的错误提示，帮助快速定位配置问题
+
+### 🔧 改进
+
+- **性能优化** - 组件懒加载、路由懒加载、虚拟滚动优化
+- **状态持久化** - 使用 Pinia Plugin Persistedstate 实现筛选状态持久化
+- **类型安全** - 全面的 TypeScript 类型定义，减少运行时错误
+- **代码质量** - 更清晰的代码结构和更好的可维护性
+- **用户体验** - Toast 通知、确认对话框、加载状态等交互优化
+
+### 📦 依赖更新
+
+**新增依赖：**
+- `vue@^3.5`
+- `vuetify@^3.7`
+- `pinia@^2.2`
+- `vue-router@^4.5`
+- `echarts@^5.5`
+- `vue-echarts@^7.0`
+- `@vueuse/core@^11.0`
+- `vite-plugin-pwa@^0.19`
+
+**移除依赖：**
+- `react`
+- `react-dom`
+- `react-router-dom`
+- `tailwindcss`
+- `recharts`
+- `framer-motion`
+
+### ⚠️ 破坏性变更
+
+**无** - 本次重构仅涉及前端，后端 API 完全兼容，用户数据和配置不受影响
+
+### 🔄 迁移指南
+
+**对于用户：**
+- 无需任何操作，Docker 镜像更新后自动使用新前端
+- 所有配置、数据、功能保持不变
+- 可能需要清除浏览器缓存以加载新版本
+
+**对于开发者：**
+- 前端代码位于 `frontend-vue/` 目录
+- 开发文档已更新，详见 [DEVELOPMENT.md](DEVELOPMENT.md)
+- 迁移计划详见 [VUE3_MIGRATION_PLAN.md](VUE3_MIGRATION_PLAN.md)
+
+### 🐛 修复
+
+- 修复了 React 版本中存在的一些布局问题
+- 优化了服务器切换时的数据刷新逻辑
+- 改进了 PWA 的更新机制
+
+### 📝 文档更新
+
+- 更新了 README.md 技术栈说明
+- 更新了 DEVELOPMENT.md 开发文档
+- 添加了 Vue3 迁移计划文档
+
+---
+
 ## v1.9 (2025-12-10)
 
 ### 新功能
