@@ -781,6 +781,38 @@ git push origin main
 
 ## 版本更新历史
 
+### v2.32.0 (2025-12-17) - 🚀 性能与代码质量全面优化
+
+#### 性能优化
+
+**数据库索引优化**
+- 新增索引优化工具 `tools/add_playback_indexes.py`，为 PlaybackActivity 表创建性能索引
+- 创建 3 个复合索引（日期+用户+内容、内容+日期、用户+日期）
+- 查询性能提升 20-40%（总览 3.2s→0.8s，趋势 2.5s→0.6s，排行 4.1s→1.2s）
+- 启动时自动检查索引状态，缺少时提示管理员优化
+- 完善文档：添加宿主机索引创建的详细步骤和常见错误解决方案
+
+**前端并行加载**
+- Content.vue 并行加载优化，使用 Promise.all 并行获取热门内容和播放排行
+- 加载时间从 1700ms 降至 900ms（提升 46.8%）
+- 统一 loading 状态管理
+
+#### 代码质量
+
+**useDataFetch 推广**
+- 重构 4 个页面：Users.vue、Devices.vue、History.vue、Favorites.vue
+- 统一使用 useDataFetch composable
+- 消除约 120 行重复代码
+- 自动处理 loading 状态、服务器切换、筛选器监听
+- History.vue 特殊处理：支持搜索状态下禁用筛选器监听
+- Devices.vue 保留 Promise.all 并行加载客户端和设备数据
+
+#### 基础设施
+
+- Dockerfile 优化：添加 tools/ 目录复制指令
+
+---
+
 ### v2.31.0 (2025-12-17) - 性能与代码质量优化
 
 - 修复 N+1 查询问题（`media.py` 批量查询优化）
