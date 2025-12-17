@@ -44,7 +44,7 @@ Emby Stats 是一个现代化的 Emby 媒体服务器播放统计分析面板，
 
 **Docker 镜像：** `qc0624/emby-stats`
 
-**当前版本：** v2.29.1
+**当前版本：** v2.30.0
 
 ---
 
@@ -67,12 +67,23 @@ emby-stats/
 │   ├── routers/                      # API 路由模块
 │   │   ├── __init__.py
 │   │   ├── auth.py                   # 认证路由（登录/登出/检查）
-│   │   ├── stats.py                  # 统计数据 API（核心）
+│   │   ├── stats/                    # 统计数据 API（核心，v2.29.2 模块化）
+│   │   │   ├── __init__.py           # 路由导出
+│   │   │   ├── helpers.py            # 辅助函数
+│   │   │   ├── overview.py           # 总览统计
+│   │   │   ├── trend.py              # 趋势统计
+│   │   │   ├── users.py              # 用户统计
+│   │   │   ├── content.py            # 内容统计
+│   │   │   ├── history.py            # 历史记录
+│   │   │   ├── favorites.py          # 收藏统计
+│   │   │   ├── filters.py            # 筛选选项
+│   │   │   └── mappings.py           # 名称映射
 │   │   ├── media.py                  # 媒体资源（海报/背景图/内容详情/排行）
 │   │   ├── servers.py                # 多服务器管理 CRUD
 │   │   ├── files.py                  # 文件浏览器（选择数据库路径）
 │   │   ├── report.py                 # 观影报告配置和发送
-│   │   └── tg_bot.py                 # Telegram Bot 管理
+│   │   ├── tg_bot.py                 # Telegram Bot 管理
+│   │   └── tools.py                  # 工具箱（Item ID 替换等）
 │   └── services/                     # 业务逻辑服务
 │       ├── emby.py                   # Emby API 交互（带缓存）
 │       ├── servers.py                # 服务器管理服务
@@ -117,6 +128,7 @@ emby-stats/
 │   │   │   ├── History.vue           # 播放历史
 │   │   │   ├── Favorites.vue         # 收藏统计
 │   │   │   ├── Report.vue            # 报告配置
+│   │   │   ├── Tools.vue             # 工具箱
 │   │   │   └── Login.vue             # 登录页
 │   │   ├── components/               # 通用组件
 │   │   │   ├── FilterPanel.vue       # 筛选面板
@@ -359,6 +371,12 @@ where_clause, params = build_filter_conditions(
 - `GET /api/tg-bot/config` - 获取 Bot 配置
 - `POST /api/tg-bot/config` - 保存 Bot 配置
 
+#### tools.py - 工具箱
+
+- `POST /api/tools/replace-item-id` - 替换播放记录中的 Item ID
+
+用于处理剧集洗版后 ItemId 变化的情况，批量更新数据库中的记录。
+
 ### 5. 服务模块 (services/)
 
 #### emby.py - Emby API 服务
@@ -444,6 +462,7 @@ where_clause, params = build_filter_conditions(
 | `/history` | `History.vue` | 播放历史 |
 | `/favorites` | `Favorites.vue` | 收藏统计 |
 | `/report` | `Report.vue` | 报告配置 |
+| `/tools` | `Tools.vue` | 工具箱 |
 | `/login` | `Login.vue` | 登录页 |
 
 所有路由（除 `/login`）需要认证。
@@ -491,6 +510,12 @@ where_clause, params = build_filter_conditions(
 - 用户选择
 - 报告预览
 - 测试推送按钮
+
+#### Tools.vue - 工具箱
+- Item ID 替换工具
+- 用于处理剧集洗版后 ItemId 变化的情况
+- 批量更新播放记录数据库
+- 支持查询受影响的记录数并显示确认信息
 
 #### Login.vue - 登录页
 - 服务器选择
@@ -756,280 +781,46 @@ git push origin main
 
 ## 版本更新历史
 
+### v2.30.0 (2025-12-17) - 工具箱功能
+
+- 新增工具箱页面和导航菜单项
+- Item ID 替换工具：用于处理剧集洗版后 ItemId 变化
+- 提供 Web 界面和 Python 命令行脚本两种方式
+
+---
+
+### v2.29.2 (2025-12-17) - 代码模块化重构
+
+- 将 979 行的 `stats.py` 拆分为 8 个功能模块
+- 最大文件从 978 行降至 260 行，提升可读性
+- 所有 API 端点保持向后兼容
+
+---
+
 ### v2.29.1 (2025-12-16) - 代码重构与性能优化
 
-本版本专注于消除代码重复和解决 N+1 查询性能瓶颈。
-
-#### 🎯 核心优化
-
-**1. 代码重复消除 - build_filter_conditions**
-- ✅ 将 `build_filter_conditions` 函数从 `routers/stats.py` 和 `routers/media.py` 提取到 `utils/query_parser.py`
-- ✅ 消除了 113 行重复代码
-- ✅ 统一筛选条件构建逻辑，降低维护成本
-- ✅ 提升代码可维护性，避免逻辑不同步风险
-
-**2. N+1 查询性能优化 - get_recent_plays**
-- ✅ 在 `services/emby.py` 中添加 `get_items_info_batch` 批量查询方法
-- ✅ 重构 `routers/stats.py` 的 `get_recent_plays` 函数使用批量查询
-- ✅ API 调用次数从 40+ 次减少到 1-2 次
-- ✅ 预期性能提升 80%+（响应时间从 2-5秒 降至 200-500ms）
-
-**3. 批量查询实现**
-- ✅ 利用 Emby API 的 `Ids` 参数实现一次查询多个 item
-- ✅ 充分利用现有缓存机制，只查询未缓存的 item
-- ✅ 完善的错误处理和边界条件处理
-
-**优化流程：**
-```python
-# get_recent_plays 优化后的五步流程
-1. 查询所有播放记录并收集 item_ids
-2. 批量获取所有 item 信息
-3. 收集需要的 series_ids
-4. 批量获取所有 series 信息
-5. 从预取结果构建返回数据
-```
-
-#### 📊 优化成果
-
-| 优化项 | 优化前 | 优化后 | 效果 |
-|--------|--------|--------|------|
-| 代码重复 | 113行重复 | 0行重复 | ⭐⭐⭐⭐⭐ |
-| API调用次数 | 40+ 次/请求 | 1-2 次/请求 | ⭐⭐⭐⭐⭐ |
-| 响应时间 | 2-5秒 | 200-500ms | ⭐⭐⭐⭐⭐ |
-| 性能提升 | - | 80%+ | ⭐⭐⭐⭐⭐ |
-
-#### 🔧 技术细节
-
-**涉及文件（修改）**:
-- `backend/utils/query_parser.py` - 添加 `build_filter_conditions` 统一函数
-- `backend/services/emby.py` - 添加 `get_items_info_batch` 方法，修复 List 类型导入
-- `backend/routers/stats.py` - 使用统一的 `build_filter_conditions`，重构 `get_recent_plays`
-- `backend/routers/media.py` - 使用统一的 `build_filter_conditions`
-
-**向后兼容**:
-- ✅ 所有 API 接口保持不变
-- ✅ 返回数据格式保持不变
-- ✅ 无需修改前端代码
+- 消除 113 行重复代码，提取统一的 `build_filter_conditions` 函数
+- 添加批量查询方法，API 调用从 40+ 次降至 1-2 次
+- 响应时间从 2-5秒 降至 200-500ms
 
 ---
 
 ### v2.29.0 (2025-12-16) - 日志系统优化与清理
 
-本版本专注于日志系统的深度优化，大幅减少日志噪音，让日志更清晰、更有价值。
-
-#### 🎯 核心优化
-
-**1. HTTP请求日志中间件**
-- ✅ 添加自动HTTP响应日志记录中间件（`backend/main.py`）
-- ✅ 4xx错误（401/404等）自动记录为 **WARNING** 级别
-- ✅ 5xx错误（500/502等）自动记录为 **ERROR** 级别
-- ✅ 2xx成功请求完全静默，不产生任何日志
-- ✅ 记录请求方法、路径、状态码和响应时间
-
-**日志格式示例**:
-```
-2025-12-16 18:45:49 [WARNING] emby_stats.main - GET /api/invalid - 401 (0ms)
-2025-12-16 18:45:50 [ERROR] emby_stats.main - POST /api/data - 500 (150ms)
-```
-
-**2. 禁用Uvicorn访问日志**
-- ✅ 修改 `Dockerfile` 启动命令，添加 `--no-access-log` 参数
-- ✅ 彻底消除 Uvicorn 框架自带的访问日志噪音
-- ✅ 避免重复的日志记录（中间件已记录）
-
-**优化前后对比**:
-```diff
-# 优化前：每个请求都有两条日志
-- 2025-12-16 18:26:27 [INFO] GET /api/now-playing - 200 (21ms)
-- INFO:     192.243.116.39:51176 - "GET /api/now-playing HTTP/1.1" 200 OK
-
-# 优化后：正常请求完全静默
-（无日志）
-```
-
-**3. API Key验证日志优化**
-- ✅ Token验证失败从 WARNING 降级为 DEBUG 级别
-- ✅ 解决启动时产生10条"Failed to verify admin API key: 500"的问题
-- ✅ 500错误通常是数据库中的旧token格式问题，属于预期内的验证失败
-
-**优化前后对比**:
-```diff
-# 优化前：启动时产生大量warning
-- 2025-12-16 18:20:01 [WARNING] emby_stats.services.emby - Failed to verify admin API key: 500
-- 2025-12-16 18:20:01 [WARNING] emby_stats.services.emby - Failed to verify admin API key: 500
-- ... (共10条)
-
-# 优化后：启动清爽
-2025-12-16 18:45:31 [INFO] emby_stats.main - ✓ 会话数据库初始化完成
-2025-12-16 18:45:31 [INFO] emby_stats.main - ✓ 已加载 2 个服务器配置
-```
-
-**4. 代码质量提升**
-- ✅ 修复 `backend/routers/auth.py` 中残留的 print 语句（1处）
-- ✅ 修复 `backend/routers/stats.py` 中残留的 print 语句（2处）
-- ✅ 修复 `backend/name_mappings.py` 中残留的 print 语句（6处）
-- ✅ 为 `backend/services/emby.py` 外部API调用失败添加错误日志（8处）
-
-**5. 版本号更新**
-- ✅ `frontend-vue/public/sw.js` - Service Worker 缓存版本
-- ✅ `frontend-vue/src/layouts/DefaultLayout.vue` - 界面显示版本
-- ✅ `frontend-vue/index.html` - Favicon 缓存参数
-- ✅ `DEVELOPMENT.md` - 文档版本号
-
-#### 📊 优化成果
-
-| 优化项 | 优化前 | 优化后 | 效果 |
-|--------|--------|--------|------|
-| 启动日志 | 10条API验证warning | 0条warning | ⭐⭐⭐⭐⭐ |
-| 正常请求 | 每个请求2条INFO日志 | 完全静默 | ⭐⭐⭐⭐⭐ |
-| 错误请求 | 1条Uvicorn日志 | 1条结构化日志 | ⭐⭐⭐⭐⭐ |
-| 日志噪音 | 极高 | 极低 | ⭐⭐⭐⭐⭐ |
-
-#### 🔧 技术细节
-
-**涉及文件（修改）**:
-- `backend/main.py` - 添加HTTP日志中间件
-- `backend/services/emby.py` - 优化API验证日志级别，添加错误日志
-- `backend/routers/auth.py` - 替换print为logger
-- `backend/routers/stats.py` - 替换print为logger
-- `backend/name_mappings.py` - 替换print为logger
-- `Dockerfile` - 添加 `--no-access-log` 参数
-- `frontend-vue/public/sw.js` - 更新版本号
-- `frontend-vue/src/layouts/DefaultLayout.vue` - 更新版本号
-- `frontend-vue/index.html` - 更新favicon缓存版本
-
-**日志级别规则**:
-- **DEBUG**: Token验证失败、内部调试信息
-- **INFO**: 应用启动、配置加载、重要状态变更
-- **WARNING**: 客户端错误（401/403/404等）
-- **ERROR**: 服务器错误（500/502等）、外部API调用失败
-
-**向后兼容**:
-- ✅ 所有 API 接口保持不变
-- ✅ 日志格式更清晰，便于监控和排查
-- ✅ 无需修改前端代码
-- ✅ 无需修改环境变量配置
-
-#### 📈 测试验证
-
-- ✅ 启动日志测试：无warning噪音，启动清爽
-- ✅ 正常请求测试：200状态完全静默
-- ✅ 错误请求测试：401/404/500正确记录为WARNING/ERROR
-- ✅ 日志格式测试：包含方法、路径、状态码、响应时间
-- ✅ Docker镜像构建：成功
-- ✅ 容器运行测试：正常
-
-#### 💡 使用建议
-
-**日志监控**:
-```bash
-# 只看错误和警告
-docker logs emby-stats 2>&1 | grep -E "(WARNING|ERROR)"
-
-# 实时监控错误
-docker logs -f emby-stats 2>&1 | grep -E "(WARNING|ERROR)"
-```
-
-**日志级别调整**:
-```yaml
-# docker-compose.yml
-environment:
-  - LOG_LEVEL=DEBUG  # 开启DEBUG日志，可看到Token验证详情
-```
+- 添加 HTTP 请求日志中间件（2xx 静默，4xx WARNING，5xx ERROR）
+- 禁用 Uvicorn 访问日志，消除日志噪音
+- 优化 API Key 验证日志级别
+- 替换所有 print 语句为标准日志输出
 
 ---
 
 ### v2.28.0 (2025-12-16) - 后端性能与代码质量优化
 
-本版本专注于后端架构优化，提升性能、可维护性和代码质量，无前端功能变更。
-
-#### 🎯 核心优化
-
-**1. 统一日志系统**
-- ✅ 创建 `backend/logger.py` 统一日志配置模块
-- ✅ 替换所有 print 语句为标准化日志输出（40+ 处）
-- ✅ 支持日志级别控制（DEBUG/INFO/WARNING/ERROR）
-- ✅ 模块化日志标识（如 `emby_stats.main`, `emby_stats.db_pool`）
-- ✅ 可选的文件日志轮转支持
-
-**日志格式示例**:
-```
-2025-12-16 15:54:55 [INFO] emby_stats.main - ✓ 会话数据库初始化完成
-2025-12-16 15:54:55 [INFO] emby_stats.db_pool - [DBPool] Pool initialized
-```
-
-**2. 数据库连接池**
-- ✅ 创建 `backend/db_pool.py` 连接池管理模块
-- ✅ 为每个数据库维护独立连接池（playback: 5, users: 3, auth: 2）
-- ✅ 自动连接健康检查和重建机制
-- ✅ 支持超时和并发控制
-- ✅ 应用关闭时优雅释放所有连接
-
-**性能提升**:
-- 并发请求性能：692 QPS
-- 平均响应时间：8ms
-- 连接复用，减少开销
-
-**3. 参数解析工具**
-- ✅ 创建 `backend/utils/query_parser.py` 统一参数解析
-- ✅ `parse_comma_separated()` 函数处理逗号分隔参数
-- ✅ `FilterParams` 类封装筛选参数
-- ✅ 消除 120+ 行重复代码
-- ✅ 更新 8 个 API 端点使用新工具
-
-**代码简化示例**:
-```python
-# 优化前：每个 API 都重复这些代码
-user_list = [u.strip() for u in users.split(",")] if users else None
-client_list = [c.strip() for c in clients.split(",")] if clients else None
-# ... 5 行重复代码
-
-# 优化后：统一使用工具类
-filter_params = FilterParams(users, clients, devices, item_types, playback_methods)
-where_clause, params = build_filter_conditions(**filter_params.to_dict())
-```
-
-#### 📊 优化成果
-
-| 优化项 | 改进前 | 改进后 | 提升 |
-|--------|--------|--------|------|
-| 日志系统 | 零散 print | 统一 logger | ⭐⭐⭐⭐⭐ |
-| 数据库连接 | 每次新建 | 连接池复用 | ⭐⭐⭐⭐⭐ |
-| 参数解析 | 120+ 行重复 | 统一工具类 | ⭐⭐⭐⭐⭐ |
-| 并发性能 | - | 692 QPS | ⭐⭐⭐⭐⭐ |
-
-#### 🔧 技术细节
-
-**涉及文件（新增/修改）**:
-- `backend/logger.py` - 新增
-- `backend/db_pool.py` - 新增
-- `backend/utils/query_parser.py` - 新增
-- `backend/database.py` - 修改（使用连接池）
-- `backend/main.py` - 修改（初始化日志和连接池）
-- `backend/routers/stats.py` - 修改（使用参数解析工具）
-- 9 个 services 模块 - 修改（使用日志系统）
-- `backend/scheduler.py` - 修改（使用日志系统）
-
-**环境变量（新增）**:
-- `LOG_LEVEL` - 日志级别（默认：INFO）
-- `ENABLE_FILE_LOG` - 启用文件日志（默认：false）
-
-**向后兼容**:
-- ✅ 所有 API 接口保持不变
-- ✅ 数据库连接方式对外接口兼容
-- ✅ 无需修改前端代码
-
-#### 📈 测试验证
-
-- ✅ Python 语法验证：14 个文件全部通过
-- ✅ 日志格式测试：输出正确，模块标识清晰
-- ✅ 连接池功能测试：创建成功，自动管理
-- ✅ 参数解析测试：功能正常，代码简化
-- ✅ 并发性能测试：30 并发请求，100% 成功率
-- ✅ API 功能测试：所有端点正常响应
+- 创建统一日志系统（`logger.py`），替换 40+ 处 print
+- 创建数据库连接池（`db_pool.py`），并发性能达 692 QPS
+- 创建参数解析工具（`utils/query_parser.py`），消除 120+ 行重复代码
 
 ---
-
 ## 常见问题
 
 ### Q: 如何修改饼图布局？
