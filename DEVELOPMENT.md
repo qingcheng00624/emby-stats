@@ -3,17 +3,36 @@
 <details>
 <summary><strong>📑 目录（点击展开）</strong></summary>
 
-**基础**
-- [项目概述](#overview) | [目录结构](#structure)
+**📦 项目概述** [→](#overview)
+- [核心功能](#core-features) · [技术栈](#tech-stack)
 
-**架构**
-- [后端架构](#backend) | [前端架构](#frontend)
+**📁 目录结构** [→](#structure)
+- [运行时目录](#runtime-dirs)
 
-**开发**
-- [关键特性](#features) | [开发指南](#guide) | [版本发布](#release)
+**⚙️ 后端架构** [→](#backend)
+- [应用入口](#backend-main) · [配置管理](#backend-config) · [数据库工具](#backend-db) · [工具模块](#backend-utils) · [路由模块](#backend-routers) · [服务模块](#backend-services)
 
-**参考**
-- [版本历史](#changelog) | [性能优化](#performance) | [常见问题](#faq) | [故障排除](#troubleshooting)
+**🎨 前端架构** [→](#frontend)
+- [技术选型](#frontend-tech) · [状态管理](#frontend-stores) · [路由配置](#frontend-router) · [页面组件](#frontend-pages) · [布局组件](#frontend-layouts) · [图表组件](#frontend-charts) · [UI组件](#frontend-ui) · [PWA支持](#frontend-pwa)
+
+**✨ 关键特性** [→](#features)
+- [多服务器](#feat-multi-server) · [名称映射](#feat-name-mapping) · [内容聚合](#feat-content-agg) · [排行榜](#feat-ranking) · [PWA离线](#feat-pwa)
+
+**🛠️ 开发指南** [→](#guide)
+- [本地开发](#dev-local) · [添加新页面](#dev-new-page) · [添加新API](#dev-new-api) · [修改主题](#dev-theme) · [Docker构建](#dev-docker)
+
+**🚀 版本发布** [→](#release)
+- [更新版本号](#release-version) · [更新文档](#release-docs) · [构建推送](#release-build) · [提交代码](#release-commit)
+
+**📋 版本历史** [→](#changelog)
+
+**⚡ 性能优化** [→](#performance)
+- [数据库索引](#perf-db-index)
+
+**❓ 常见问题** [→](#faq)
+
+**🔧 故障排除** [→](#troubleshooting)
+- [日志查看](#trouble-logs) · [代码风格](#trouble-style) · [提交规范](#trouble-commit)
 
 </details>
 
@@ -23,7 +42,7 @@
 
 Emby Stats 是一个现代化的 Emby 媒体服务器播放统计分析面板，提供实时播放监控、数据可视化、用户统计、观影报告生成等功能。项目采用前后端分离架构，支持多服务器管理、PWA 离线访问和 Telegram 推送集成。
 
-### 核心功能
+<h3 id="core-features">核心功能</h3>
 
 - **实时监控**：正在播放会话实时显示
 - **数据统计**：播放次数、时长、用户、内容、设备等多维度统计
@@ -35,7 +54,7 @@ Emby Stats 是一个现代化的 Emby 媒体服务器播放统计分析面板，
 - **名称映射**：客户端和设备名称自定义映射
 - **PWA 支持**：可安装到桌面，支持离线访问
 
-### 技术栈
+<h3 id="tech-stack">技术栈</h3>
 
 **后端：**
 - Python 3.11
@@ -221,7 +240,7 @@ emby-stats/
 └── CHANGELOG.md                      # 更新日志
 ```
 
-### 运行时目录
+<h3 id="runtime-dirs">运行时目录</h3>
 
 容器内的关键目录：
 
@@ -244,7 +263,7 @@ emby-stats/
 
 <h2 id="backend">后端架构</h2>
 
-### 1. 应用入口 (main.py)
+<h3 id="backend-main">1. 应用入口 (main.py)</h3>
 
 FastAPI 应用的核心入口，负责：
 - 应用实例化和中间件配置
@@ -278,7 +297,7 @@ PUBLIC_PREFIXES = [
 5. 启动定时任务调度器 (`start_scheduler`)
 6. 启动 Telegram Bot (`tg_bot_service.start`)
 
-### 2. 配置管理 (config.py)
+<h3 id="backend-config">2. 配置管理 (config.py)</h3>
 
 通过环境变量配置：
 
@@ -298,7 +317,7 @@ PUBLIC_PREFIXES = [
 - `MIN_PLAY_DURATION` 用于过滤短时间播放记录，低于此时长的不计入播放次数（但时长仍统计）
 - `TZ_OFFSET` 用于 SQLite 查询时的时间转换（UTC → 本地时间）
 
-### 3. 数据库工具 (database.py)
+<h3 id="backend-db">3. 数据库工具 (database.py)</h3>
 
 **数据库连接函数：**
 ```python
@@ -317,7 +336,7 @@ local_date(column)                  # UTC 转本地日期
 convert_guid_bytes_to_standard()    # .NET GUID 字节转换
 ```
 
-### 3.5. 工具模块 (utils/)
+<h3 id="backend-utils">3.5. 工具模块 (utils/)</h3>
 
 #### query_parser.py - 查询参数解析工具
 
@@ -351,7 +370,7 @@ where_clause, params = build_filter_conditions(
 - 自动处理名称映射展开
 - 返回参数化查询的 WHERE 子句和参数列表，防止 SQL 注入
 
-### 4. 路由模块 (routers/)
+<h3 id="backend-routers">4. 路由模块 (routers/)</h3>
 
 #### stats.py - 统计 API
 
@@ -436,7 +455,7 @@ where_clause, params = build_filter_conditions(
 
 用于处理剧集洗版后 ItemId 变化的情况，批量更新数据库中的记录。
 
-### 5. 服务模块 (services/)
+<h3 id="backend-services">5. 服务模块 (services/)</h3>
 
 #### emby.py - Emby API 服务
 
@@ -470,7 +489,7 @@ where_clause, params = build_filter_conditions(
 
 <h2 id="frontend">前端架构</h2>
 
-### 1. 技术选型
+<h3 id="frontend-tech">1. 技术选型</h3>
 
 - **Vue 3 Composition API**：使用 `<script setup>` 语法
 - **Vuetify 3**：Material Design 组件库
@@ -480,7 +499,7 @@ where_clause, params = build_filter_conditions(
 - **ECharts**：数据可视化
 - **Vite**：快速构建工具
 
-### 2. 状态管理 (stores/)
+<h3 id="frontend-stores">2. 状态管理 (stores/)</h3>
 
 使用 Pinia 管理全局状态：
 
@@ -507,7 +526,7 @@ where_clause, params = build_filter_conditions(
 - `buildQueryParams` - 构建 API 查询参数
 - 筛选状态持久化到 localStorage
 
-### 3. 路由配置 (router/)
+<h3 id="frontend-router">3. 路由配置 (router/)</h3>
 
 主要路由：
 
@@ -526,7 +545,7 @@ where_clause, params = build_filter_conditions(
 
 所有路由（除 `/login`）需要认证。
 
-### 4. 页面组件 (pages/)
+<h3 id="frontend-pages">4. 页面组件 (pages/)</h3>
 
 #### Overview.vue - 总览页面
 - 统计卡片：播放次数、时长、用户数、内容数
@@ -581,7 +600,7 @@ where_clause, params = build_filter_conditions(
 - 用户名密码登录
 - 深色主题背景
 
-### 5. 布局组件 (layouts/)
+<h3 id="frontend-layouts">5. 布局组件 (layouts/)</h3>
 
 #### DefaultLayout.vue - 主布局
 - 左侧导航栏（桌面端固定，移动端抽屉）
@@ -594,7 +613,7 @@ where_clause, params = build_filter_conditions(
 - 版本显示：v2.27.12
 - **路由导航高亮**：使用 `isActiveRoute` 函数进行精确路径匹配，避免根路径 `/` 始终激活的问题
 
-### 6. 图表组件 (components/charts/)
+<h3 id="frontend-charts">6. 图表组件 (components/charts/)</h3>
 
 #### TrendChart.vue
 - 基于 ECharts 的折线图
@@ -615,7 +634,7 @@ where_clause, params = build_filter_conditions(
 - 基于 ECharts 的柱状图
 - 用户播放时长排行
 
-### 7. UI 组件 (components/ui/)
+<h3 id="frontend-ui">7. UI 组件 (components/ui/)</h3>
 
 #### Card.vue
 - 基础卡片容器
@@ -817,7 +836,7 @@ interface Column {
 </LoadingState>
 ```
 
-### 8. PWA 支持
+<h3 id="frontend-pwa">8. PWA 支持</h3>
 
 #### Service Worker (public/sw.js)
 - 缓存静态资源
@@ -846,34 +865,34 @@ interface Column {
 
 <h2 id="features">关键特性</h2>
 
-### 1. 多服务器支持
+<h3 id="feat-multi-server">1. 多服务器支持</h3>
 
 - 每个服务器独立配置数据库路径
 - 动态切换服务器无需刷新
 - 海报和背景图 URL 包含 server_id 参数
 - 前端通过 Cookie 存储当前服务器 ID
 
-### 2. 名称映射
+<h3 id="feat-name-mapping">2. 名称映射</h3>
 
 - 支持客户端和设备名称自定义映射
 - 支持正则表达式匹配
 - 配置实时生效，可热重载
 - 在筛选选项和统计结果中自动去重
 
-### 3. 内容聚合
+<h3 id="feat-content-agg">3. 内容聚合</h3>
 
 - 剧集自动按剧名聚合
 - 返回 series_id 而非单集 episode_id
 - 海报使用剧集海报而非单集海报
 - 详情页显示整部剧的统计
 
-### 4. 排行榜设计
+<h3 id="feat-ranking">4. 排行榜设计</h3>
 
 - 热门内容：海报墙样式
 - 播放排行：列表样式，前三名金银铜牌效果
 - 显示排名、海报缩略图、标题、播放次数、观看时长
 
-### 5. PWA 离线支持
+<h3 id="feat-pwa">5. PWA 离线支持</h3>
 
 - 可安装到桌面
 - 离线访问静态资源
@@ -884,7 +903,7 @@ interface Column {
 
 <h2 id="guide">开发指南</h2>
 
-### 本地开发环境
+<h3 id="dev-local">本地开发环境</h3>
 
 **前置要求：**
 - Python 3.11+
@@ -915,20 +934,20 @@ npm run dev
 
 前端开发服务器默认在 `http://localhost:5173`，会自动代理 API 请求到后端。
 
-### 添加新页面
+<h3 id="dev-new-page">添加新页面</h3>
 
 1. 在 `frontend-vue/src/pages/` 创建 Vue 组件
 2. 在 `router/index.ts` 添加路由
 3. 在 `DefaultLayout.vue` 添加菜单项（如需要）
 
-### 添加新的统计 API
+<h3 id="dev-new-api">添加新的统计 API</h3>
 
 1. 在 `backend/routers/stats.py` 或 `media.py` 添加路由函数
 2. 使用 `build_filter_conditions()` 构建筛选条件
 3. 在 `frontend-vue/src/services/api/stats.ts` 添加 API 调用
 4. 在页面组件中使用
 
-### 修改主题
+<h3 id="dev-theme">修改主题</h3>
 
 在 `frontend-vue/src/plugins/vuetify.ts` 修改 Vuetify 主题配置：
 
@@ -949,7 +968,7 @@ themes: {
 }
 ```
 
-### Docker 构建和部署
+<h3 id="dev-docker">Docker 构建和部署</h3>
 
 ```bash
 # 构建镜像
@@ -974,19 +993,19 @@ docker push qc0624/emby-stats:latest
 
 <h2 id="release">版本发布流程</h2>
 
-### 1. 更新版本号
+<h3 id="release-version">1. 更新版本号</h3>
 
 - `frontend-vue/public/sw.js` - Service Worker 缓存版本
 - `frontend-vue/src/layouts/DefaultLayout.vue` - 版本显示
 - `frontend-vue/index.html` - favicon 缓存版本参数（`?v=...`）
 - `DEVELOPMENT.md` - 当前版本号
 
-### 2. 更新文档
+<h3 id="release-docs">2. 更新文档</h3>
 
 - 更新 `CHANGELOG.md` 添加版本更新内容
 - 更新 `README.md` 中的功能说明（如有新功能）
 
-### 3. 构建和推送
+<h3 id="release-build">3. 构建和推送</h3>
 
 ```bash
 # 构建 Docker 镜像
@@ -998,7 +1017,7 @@ docker push qc0624/emby-stats:latest
 docker push qc0624/emby-stats:vX.XX
 ```
 
-### 4. 提交代码
+<h3 id="release-commit">4. 提交代码</h3>
 
 ```bash
 git add .
@@ -1131,7 +1150,7 @@ git push origin main
 
 <h2 id="performance">性能优化</h2>
 
-### 数据库索引优化
+<h3 id="perf-db-index">数据库索引优化</h3>
 
 #### 为什么需要索引优化
 
@@ -1394,7 +1413,7 @@ v2.27.12+ 已修复。早期版本中，由于根路径 `/` 会被所有路由�
 | PWA 登录循环 | Service Worker 拦截 API | 升级到 v2.23+ |
 | 侧边栏导航高亮异常 | 根路径匹配问题 | 升级到 v2.27.12+ |
 
-### 日志查看
+<h3 id="trouble-logs">日志查看</h3>
 
 ```bash
 # Docker 容器日志
@@ -1408,7 +1427,7 @@ docker logs -f emby-stats
 
 ## 贡献指南
 
-### 代码风格
+<h3 id="trouble-style">代码风格</h3>
 
 **Python：**
 - 使用 4 空格缩进
@@ -1421,7 +1440,7 @@ docker logs -f emby-stats
 - 组件使用 PascalCase 命名
 - 类型定义使用 TypeScript interface
 
-### 提交规范
+<h3 id="trouble-commit">提交规范</h3>
 
 ```
 <type>: <description>
