@@ -44,7 +44,7 @@ Emby Stats 是一个现代化的 Emby 媒体服务器播放统计分析面板，
 
 **Docker 镜像：** `qc0624/emby-stats`
 
-**当前版本：** v2.32.0
+**当前版本：** v2.32.4
 
 ---
 
@@ -87,6 +87,7 @@ emby-stats/
 │   └── services/                     # 业务逻辑服务
 │       ├── emby.py                   # Emby API 交互（带缓存）
 │       ├── servers.py                # 服务器管理服务
+│       ├── session.py                # 会话管理服务
 │       ├── users.py                  # 用户数据服务
 │       ├── report.py                 # 报告图片生成（PIL）
 │       ├── report_simple.py          # 简化版报告生成
@@ -94,10 +95,15 @@ emby-stats/
 │       ├── telegram.py               # Telegram 推送服务
 │       ├── tg_bot.py                 # Telegram Bot 交互
 │       └── tg_binding.py             # TG 用户绑定管理
+├── tools/                            # 命令行工具脚本（v2.30.0 新增）
+│   ├── add_playback_indexes.py       # 数据库索引优化工具
+│   └── replace_item_id.py            # Item ID 替换脚本
 ├── frontend-vue/                     # Vue 3 + Vuetify 前端
 │   ├── public/
 │   │   ├── sw.js                     # Service Worker（PWA）
 │   │   ├── manifest.json             # PWA 清单
+│   │   ├── favicon.svg               # Favicon SVG 源文件
+│   │   ├── favicon.ico               # Favicon ICO
 │   │   └── icons/                    # PWA 图标
 │   ├── src/
 │   │   ├── main.ts                   # Vue 应用入口
@@ -108,8 +114,10 @@ emby-stats/
 │   │   │   ├── index.ts              # Store 导出
 │   │   │   ├── auth.ts               # 认证状态
 │   │   │   ├── server.ts             # 服务器选择
-│   │   │   └── filter.ts             # 筛选状态（持久化）
+│   │   │   ├── filter.ts             # 筛选状态（持久化）
+│   │   │   └── theme.ts              # 主题状态
 │   │   ├── services/
+│   │   │   ├── index.ts              # 服务导出
 │   │   │   ├── axios.ts              # Axios 实例和拦截器
 │   │   │   └── api/
 │   │   │       ├── auth.ts           # 认证 API
@@ -117,6 +125,8 @@ emby-stats/
 │   │   │       └── stats.ts          # 统计 API
 │   │   ├── types/
 │   │   │   └── index.ts              # TypeScript 类型定义
+│   │   ├── constants/                # 常量定义（v2.31.0 新增）
+│   │   │   └── index.ts              # 硬编码常量提取
 │   │   ├── layouts/
 │   │   │   └── DefaultLayout.vue     # 主布局（导航/侧边栏）
 │   │   ├── pages/                    # 页面组件
@@ -131,24 +141,51 @@ emby-stats/
 │   │   │   ├── Tools.vue             # 工具箱
 │   │   │   └── Login.vue             # 登录页
 │   │   ├── components/               # 通用组件
+│   │   │   ├── index.ts              # 组件导出
 │   │   │   ├── FilterPanel.vue       # 筛选面板
 │   │   │   ├── ServerManagementPanel.vue  # 服务器管理
 │   │   │   ├── NameMappingPanel.vue  # 名称映射配置
+│   │   │   ├── FilePickerModal.vue   # 文件选择器
+│   │   │   ├── NowPlaying.vue        # 正在播放组件
+│   │   │   ├── GlobalToast.vue       # 全局 Toast 组件
+│   │   │   ├── GlobalConfirm.vue     # 全局确认对话框
 │   │   │   ├── charts/               # 图表组件
+│   │   │   │   ├── index.ts          # 图表组件导出
 │   │   │   │   ├── TrendChart.vue    # 趋势折线图
 │   │   │   │   ├── HeatmapChart.vue  # 热力图
 │   │   │   │   ├── PieChart.vue      # 饼图
 │   │   │   │   └── UsersChart.vue    # 用户柱状图
 │   │   │   └── ui/                   # UI 基础组件
+│   │   │       ├── index.ts          # UI 组件导出
 │   │   │       ├── Card.vue          # 卡片容器
+│   │   │       ├── StatCard.vue      # 统计卡片（v2.32.4）
+│   │   │       ├── DataTable.vue     # 响应式表格（v2.32.4）
 │   │   │       ├── PosterCard.vue    # 海报卡片
-│   │   │       └── ...
+│   │   │       ├── PosterModal.vue   # 海报弹窗
+│   │   │       ├── Avatar.vue        # 头像组件
+│   │   │       ├── AnimatedNumber.vue # 数字动画
+│   │   │       ├── LazyImage.vue     # 图片懒加载
+│   │   │       ├── LogoMark.vue      # Logo 图标
+│   │   │       ├── Modal.vue         # 通用弹窗
+│   │   │       ├── Chip.vue          # 标签组件
+│   │   │       ├── Progress.vue      # 进度条
+│   │   │       └── Skeleton.vue      # 骨架屏
 │   │   ├── composables/              # 组合式函数
-│   │   │   └── useToast.ts           # Toast 通知
+│   │   │   ├── index.ts              # Composables 导出
+│   │   │   ├── useToast.ts           # Toast 通知
+│   │   │   ├── useConfirm.ts         # 确认对话框
+│   │   │   ├── useDataFetch.ts       # 数据获取（v2.31.0）
+│   │   │   ├── useLoading.ts         # 加载状态
+│   │   │   └── useApi.ts             # API 调用封装
 │   │   ├── plugins/
 │   │   │   └── vuetify.ts            # Vuetify 配置
-│   │   └── utils/
-│   │       └── format.ts             # 格式化工具函数
+│   │   ├── utils/
+│   │   │   └── index.ts              # 工具函数（格式化等）
+│   │   └── assets/                   # 静态资源
+│   │       ├── base.css              # 基础样式
+│   │       ├── main.css              # 主样式
+│   │       ├── page-styles.css       # 页面样式
+│   │       └── theme.css             # 主题样式
 │   ├── package.json                  # npm 依赖
 │   ├── vite.config.ts                # Vite 构建配置
 │   ├── tsconfig.json                 # TypeScript 配置
@@ -588,6 +625,102 @@ where_clause, params = build_filter_conditions(
 - 应用品牌图标（侧边栏/移动端顶栏左上角）
 - 纯 SVG，跟随主题通过 `currentColor` 上色
 
+#### StatCard.vue（v2.32.4 新增）
+- 统计卡片组件，用于展示数值型统计数据
+- 支持图标、标签、数值、颜色配置
+- 内置数字动画效果（可选）
+- 悬停动画和深色模式增强
+
+**Props：**
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `icon` | string | 必填 | MDI 图标名称 |
+| `iconColor` | string | `'primary'` | 图标颜色 |
+| `iconBgColor` | string | `'rgba(29, 78, 216, 0.1)'` | 图标背景色 |
+| `label` | string | 必填 | 标签文字 |
+| `value` | number \| string | 必填 | 显示值 |
+| `valueColor` | string | `'primary'` | 数值颜色（primary/success/warning/error/info） |
+| `animated` | boolean | `true` | 是否使用数字动画 |
+| `suffix` | string | `''` | 数值后缀 |
+
+**使用示例：**
+```vue
+<StatCard
+  icon="mdi-play-circle"
+  icon-color="primary"
+  icon-bg-color="rgba(29, 78, 216, 0.1)"
+  label="总播放次数"
+  :value="1234"
+  value-color="primary"
+/>
+
+<!-- 带后缀的字符串值 -->
+<StatCard
+  icon="mdi-clock-outline"
+  label="播放时长"
+  :value="`${hours.toFixed(1)}h`"
+  :animated="false"
+/>
+```
+
+#### DataTable.vue（v2.32.4 新增）
+- 响应式数据表格组件
+- 桌面端自动显示表格，移动端自动显示列表
+- 支持自定义列渲染（通过 slots）
+- 支持自定义移动端布局
+
+**Props：**
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `columns` | Column[] | 必填 | 列定义数组 |
+| `data` | Record<string, unknown>[] | 必填 | 数据数组 |
+| `itemKey` | string | `'id'` | 数据项唯一标识字段 |
+| `mobileIcon` | string | `'mdi-circle'` | 移动端列表图标 |
+
+**Column 接口：**
+```typescript
+interface Column {
+  key: string           // 数据字段名
+  label: string         // 列标题
+  align?: 'left' | 'right' | 'center'  // 对齐方式
+  format?: (value: unknown) => string  // 格式化函数
+}
+```
+
+**Slots：**
+| 插槽名 | 参数 | 说明 |
+|--------|------|------|
+| `cell-{key}` | `{ item, value }` | 自定义单元格渲染 |
+| `mobile-prepend` | `{ item }` | 移动端列表项前置内容 |
+| `mobile-title` | `{ item }` | 移动端列表项标题 |
+| `mobile-subtitle` | `{ item }` | 移动端列表项副标题 |
+
+**使用示例：**
+```vue
+<DataTable
+  :columns="[
+    { key: 'username', label: '用户名' },
+    { key: 'play_count', label: '观看次数', align: 'right', format: (v) => v.toLocaleString() },
+  ]"
+  :data="users"
+  item-key="username"
+  mobile-icon="mdi-account"
+>
+  <!-- 自定义用户名列 -->
+  <template #cell-username="{ item }">
+    <div class="d-flex align-center">
+      <Avatar :name="item.username" size="32" class="mr-2" />
+      {{ item.username }}
+    </div>
+  </template>
+
+  <!-- 移动端自定义头像 -->
+  <template #mobile-prepend="{ item }">
+    <Avatar :name="item.username" size="48" class="mr-3" />
+  </template>
+</DataTable>
+```
+
 ### 8. PWA 支持
 
 #### Service Worker (public/sw.js)
@@ -781,6 +914,29 @@ git push origin main
 
 ## 版本更新历史
 
+### v2.32.4 (2025-12-18) - 🧩 代码质量优化与可复用组件
+
+- 后端异常处理优化：修复裸 `except:` 语句为具体异常类型
+- TypeScript 类型优化：新增 `StatsQueryParams` 接口，消除 13 处 `any`
+- 新增 `StatCard.vue` 统计卡片组件（Overview.vue 已应用）
+- 新增 `DataTable.vue` 响应式表格组件（Users.vue、Devices.vue 已应用）
+- 页面代码减少约 210 行，提取为可复用组件
+
+---
+
+### v2.32.1 (2025-12-17) - 📈 历史记录查询优化
+
+#### 性能优化
+
+**新增历史记录优化索引**
+- 新增第 4 个索引 `idx_playback_date` (DateCreated DESC)
+- 优化无筛选条件的历史记录查询（最常见场景）
+- 优化内容详情页的播放记录查询
+- 预计历史记录页加载速度提升 30-50%
+- 更新文档：DEVELOPMENT.md 索引创建命令更新为 4 个索引
+
+---
+
 ### v2.32.0 (2025-12-17) - 🚀 性能与代码质量全面优化
 
 #### 性能优化
@@ -939,6 +1095,7 @@ sqlite3 /emby/config/data/playback_reporting.db <<'EOF'
 CREATE INDEX IF NOT EXISTS idx_playback_date_user_item ON PlaybackActivity(DateCreated, UserId, ItemId);
 CREATE INDEX IF NOT EXISTS idx_playback_item_date ON PlaybackActivity(ItemId, DateCreated);
 CREATE INDEX IF NOT EXISTS idx_playback_user_date ON PlaybackActivity(UserId, DateCreated);
+CREATE INDEX IF NOT EXISTS idx_playback_date ON PlaybackActivity(DateCreated DESC);
 SELECT 'Created indexes:' AS status;
 SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='PlaybackActivity' AND name LIKE 'idx_playback_%';
 EOF
@@ -949,6 +1106,7 @@ sqlite3 /emby/config/data/playback_reporting.db <<'EOF'
 CREATE INDEX IF NOT EXISTS idx_playback_date_user_item ON PlaybackActivity(DateCreated, UserId, ItemId);
 CREATE INDEX IF NOT EXISTS idx_playback_item_date ON PlaybackActivity(ItemId, DateCreated);
 CREATE INDEX IF NOT EXISTS idx_playback_user_date ON PlaybackActivity(UserId, DateCreated);
+CREATE INDEX IF NOT EXISTS idx_playback_date ON PlaybackActivity(DateCreated DESC);
 EOF
 
 # 第二个服务器
@@ -956,6 +1114,7 @@ sqlite3 /emby2/config/data/playback_reporting.db <<'EOF'
 CREATE INDEX IF NOT EXISTS idx_playback_date_user_item ON PlaybackActivity(DateCreated, UserId, ItemId);
 CREATE INDEX IF NOT EXISTS idx_playback_item_date ON PlaybackActivity(ItemId, DateCreated);
 CREATE INDEX IF NOT EXISTS idx_playback_user_date ON PlaybackActivity(UserId, DateCreated);
+CREATE INDEX IF NOT EXISTS idx_playback_date ON PlaybackActivity(DateCreated DESC);
 EOF
 ```
 
@@ -967,10 +1126,11 @@ EOF
 # 查看已创建的索引
 sqlite3 /emby/config/data/playback_reporting.db "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='PlaybackActivity' AND name LIKE 'idx_playback_%';"
 
-# 应该看到 3 个索引：
+# 应该看到 4 个索引：
 # idx_playback_date_user_item
 # idx_playback_item_date
 # idx_playback_user_date
+# idx_playback_date
 ```
 
 ---
@@ -984,7 +1144,7 @@ docker restart emby-stats
 docker logs emby-stats --tail 30
 
 # 应该看到类似输出：
-# ✓ 服务器 [xxx] 数据库索引已优化 (已有 3 个优化索引)
+# ✓ 服务器 [xxx] 数据库索引已优化 (已有 4 个优化索引)
 ```
 
 ---
@@ -998,6 +1158,7 @@ sqlite3 playback_reporting.db <<'EOF'
 CREATE INDEX IF NOT EXISTS idx_playback_date_user_item ON PlaybackActivity(DateCreated, UserId, ItemId);
 CREATE INDEX IF NOT EXISTS idx_playback_item_date ON PlaybackActivity(ItemId, DateCreated);
 CREATE INDEX IF NOT EXISTS idx_playback_user_date ON PlaybackActivity(UserId, DateCreated);
+CREATE INDEX IF NOT EXISTS idx_playback_date ON PlaybackActivity(DateCreated DESC);
 SELECT 'Indexes created successfully!' AS status;
 SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='PlaybackActivity' AND name LIKE 'idx_playback_%';
 EOF
@@ -1042,13 +1203,14 @@ docker compose restart
 
 #### 优化脚本说明
 
-脚本会创建以下三个索引：
+脚本会创建以下四个索引：
 
 | 索引名称 | 列 | 用途 |
 |---------|---|------|
 | `idx_playback_date_user_item` | DateCreated, UserId, ItemId | 用于按日期范围+用户+内容查询 |
 | `idx_playback_item_date` | ItemId, DateCreated | 用于内容聚合统计 |
 | `idx_playback_user_date` | UserId, DateCreated | 用于用户活跃度查询 |
+| `idx_playback_date` | DateCreated DESC | 用于历史记录按时间倒序查询 |
 
 **脚本特性：**
 - 自动检查已存在的索引，避免重复创建
